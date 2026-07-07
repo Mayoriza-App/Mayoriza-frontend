@@ -48,6 +48,9 @@ export class AuthService {
     try {
       const authData = await this.authStrategy.login(email, password);
 
+      localStorage.setItem('token', authData.token);
+      this.token.set(authData.token);
+
       const userProfile = await new Promise<Usuario>((resolve, reject) => {
         this.usuarioService.findOne(authData.userId).subscribe({
           next: (user) => resolve(user),
@@ -55,10 +58,7 @@ export class AuthService {
         });
       });
 
-      localStorage.setItem('token', authData.token);
       localStorage.setItem('user', JSON.stringify(userProfile));
-
-      this.token.set(authData.token);
       this.currentUser.set(userProfile);
 
       this.router.navigate(['/dashboard']);
