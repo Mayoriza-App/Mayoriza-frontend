@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { Empresa } from '../interfaces/empresa-usuario.interface';
 
 export interface OpcionesPlan {
@@ -9,11 +10,11 @@ export interface OpcionesPlan {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class EmpresaService {
   private http = inject(HttpClient);
-  private apiUrl = '/api/empresas';
+  private apiUrl = `${environment.apiUrl}/empresas`;
 
   findAll(): Observable<Empresa[]> {
     return this.http.get<Empresa[]>(this.apiUrl);
@@ -36,7 +37,9 @@ export class EmpresaService {
   }
 
   habilitarTransferencia(rut: string, destinoEmail: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/${rut}/habilitar-transferencia`, { destinoEmail });
+    return this.http.post(`${this.apiUrl}/${rut}/habilitar-transferencia`, {
+      destinoEmail,
+    });
   }
 
   cambiarEstadoEmpresa(rut: string, activa: boolean): Observable<any> {
