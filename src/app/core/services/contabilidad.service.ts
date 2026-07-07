@@ -56,10 +56,12 @@ export class ContabilidadService {
 
   getCentrosCosto(empresaRut: string): Observable<CentroCosto[]> {
     const params = new HttpParams().set('empresaRut', empresaRut);
-    return this.http.get<CentroCosto[]>('/centros-costo', { params });
+    return this.http.get<CentroCosto[]>(`${environment.apiUrl}/centros-costo`, {
+      params,
+    });
   }
 
   getTerceros(): Observable<Tercero[]> {
-    return this.http.get<Tercero[]>('/terceros');
+    return this.http.get<Tercero[]>(`${environment.apiUrl}/terceros`);
   }
 }
