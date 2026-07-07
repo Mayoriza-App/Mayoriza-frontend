@@ -30,7 +30,7 @@ SUPABASE_URL="https://[tu-id-supabase].supabase.co"
 SUPABASE_PUBLISHABLE_KEY="tu-llave-anon-publica"
 
 # URL de la API del Backend (Render / Localhost)
-API_URL="http://localhost:3000/api" 
+API_URL="http://localhost:3000/api"
 # En producción sería algo como: https://mayoriza-backend.onrender.com/api
 ```
 
@@ -39,15 +39,18 @@ API_URL="http://localhost:3000/api"
 ## 💻 Instrucciones de Ejecución (Desarrollo local)
 
 1. **Instalar dependencias:**
+
    ```bash
    pnpm install
    ```
 
 2. **Levantar el servidor de desarrollo:**
+
    ```bash
    pnpm run start
    ```
-   *(Este comando inyectará automáticamente las variables de tu archivo `.env` local en Angular).*
+
+   _(Este comando inyectará automáticamente las variables de tu archivo `.env` local en Angular)._
 
 3. Abre tu navegador en `http://localhost:4200/`.
 
@@ -61,7 +64,7 @@ El proyecto está preparado y optimizado para ser desplegado en **Vercel** de ma
 
 1. **Framework Preset:** `Angular`
 2. **Build Command:** `pnpm run build` (o `npm run build`)
-3. **Output Directory:** `dist/frontend/browser` *(Vercel lo debería autodetectar)*
+3. **Output Directory:** `dist/frontend/browser` _(Vercel lo debería autodetectar)_
 4. **Environment Variables:** Debes agregar manualmente en la pestaña de variables de entorno de Vercel:
    - `SUPABASE_URL`
    - `SUPABASE_PUBLISHABLE_KEY`
@@ -70,8 +73,3 @@ El proyecto está preparado y optimizado para ser desplegado en **Vercel** de ma
 Una vez configurado, cualquier `push` a la rama principal actualizará automáticamente la aplicación.
 
 ---
-
-## 🛡️ Consideraciones de Seguridad y Limpieza
-
-- Los archivos `.env` están ignorados por el `.gitignore` por defecto.
-- Se han bloqueado los rastros de herramientas de IA (`.cursor`, `.gemini`, `.ai`) y el caché de `pnpm` para mantener la base de código completamente limpia y segura en GitHub.
