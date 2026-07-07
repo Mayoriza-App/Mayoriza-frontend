@@ -1,0 +1,209 @@
+<div class="max-w-6xl mx-auto h-[calc(100vh-100px)] min-h-[600px] flex flex-col animate-fade-in pb-4">
+  
+  <form [formGroup]="asientoForm" (ngSubmit)="onSubmit()" class="flex flex-col h-full bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden relative">
+    
+    <!-- 1. HEADER (Fijo arriba, nunca scrollea) -->
+    <div class="flex-none flex flex-col lg:flex-row lg:items-center justify-between bg-white p-5 border-b border-slate-200 z-50">
+      <div class="mb-3 lg:mb-0">
+        <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Nuevo Asiento Contable</h1>
+        <p class="text-slate-500 mt-1 text-sm">Registra un nuevo ingreso, egreso o traspaso verificando la cuadratura.</p>
+      </div>
+      
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Indicador visual de Cuadratura -->
+        <div *ngIf="totales().cuadrado" class="flex items-center text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg font-bold text-sm">
+          <mat-icon class="mr-1 text-base h-5 w-5 leading-5">check_circle</mat-icon> Cuadrado
+        </div>
+        <div *ngIf="!totales().cuadrado" class="flex items-center text-red-600 bg-red-50 px-3 py-2 rounded-lg font-bold text-sm">
+          <mat-icon class="mr-1 text-base h-5 w-5 leading-5">warning</mat-icon> Descuadrado (Dif: {{ totales().diferencia | currency:'CLP':'symbol-narrow':'1.0-0' }})
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" mat-button routerLink="/comprobantes">Cancelar</button>
+          <button type="submit" mat-flat-button color="primary" class="!px-6 !py-5 !rounded-xl !bg-violet-600 hover:!bg-violet-700 disabled:!bg-slate-300 disabled:!text-slate-500" 
+                  [disabled]="asientoForm.invalid || !totales().cuadrado || isSubmitting() || !appState.empresaRutActiva() || authService.currentUser()?.activo === false">
+            <span *ngIf="!isSubmitting()">Guardar</span>
+            <mat-spinner *ngIf="isSubmitting()" diameter="20" class="inline-block"></mat-spinner>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ÁREA CENTRAL CON SCROLL -->
+    <div class="flex-1 overflow-y-auto bg-slate-50/30 flex flex-col relative">
+      
+      <!-- Mensaje de Error Global -->
+      <div *ngIf="errorMessage()" class="m-5 bg-red-50 text-red-600 p-3 rounded-xl border border-red-100 flex items-center">
+        <mat-icon class="mr-2">error_outline</mat-icon>
+        {{ errorMessage() }}
+      </div>
+
+      <!-- Datos Generales (Se esconde al hacer scroll) -->
+      <div class="p-5">
+        <h3 class="text-lg font-bold text-slate-800 mb-3 border-b pb-2">Datos Generales</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <mat-form-field appearance="outline" class="w-full bg-white">
+            <mat-label>Tipo de Asiento</mat-label>
+            <mat-select formControlName="tipo">
+              <mat-option value="INGRESO">Ingreso (Recaudación)</mat-option>
+              <mat-option value="EGRESO">Egreso (Pagos)</mat-option>
+              <mat-option value="TRASPASO">Traspaso (Centralización)</mat-option>
+            </mat-select>
+            <mat-error>Requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full bg-white">
+            <mat-label>Fecha</mat-label>
+            <input matInput [matDatepicker]="picker" formControlName="fecha">
+            <mat-datepicker-toggle matIconSuffix [for]="picker" tabindex="-1"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            <mat-error>Requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full md:col-span-3 bg-white">
+            <mat-label>Glosa General (Motivo)</mat-label>
+            <input matInput formControlName="glosaGeneral" placeholder="Ej: Venta de servicios Factura #123">
+            <mat-error>La glosa general es obligatoria</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Detalle de Movimientos (Partida Doble) -->
+      <div class="flex-1 flex flex-col relative border-t border-slate-200">
+        
+        <!-- Toolbar de Movimientos (Sticky: choca contra el header principal al scrollear) -->
+        <div class="sticky top-0 z-40 h-[68px] px-5 border-b flex flex-row justify-between items-center bg-slate-50 shadow-sm">
+          <h3 class="text-lg font-bold text-slate-800">Líneas de Movimiento</h3>
+          
+          <div class="flex items-center space-x-4">
+            <div class="flex bg-slate-200 p-1 rounded-xl">
+              <button type="button" tabindex="-1"
+                      (click)="modoAvanzado.set(false)"
+                      [class]="!modoAvanzado() ? 'bg-white shadow-sm text-violet-700' : 'text-slate-500 hover:text-slate-700'"
+                      class="px-4 py-1.5 text-sm font-bold rounded-lg transition-all focus:outline-none">
+                Simple
+              </button>
+              <button type="button" tabindex="-1"
+                      (click)="modoAvanzado.set(true)"
+                      [class]="modoAvanzado() ? 'bg-white shadow-sm text-violet-700' : 'text-slate-500 hover:text-slate-700'"
+                      class="px-4 py-1.5 text-sm font-bold rounded-lg transition-all focus:outline-none">
+                Avanzado
+              </button>
+            </div>
+            <button type="button" tabindex="-1" mat-stroked-button color="primary" (click)="addMovimiento()" class="!rounded-lg bg-white">
+              <mat-icon>add</mat-icon> Agregar Fila
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla (Thead sticky justo debajo del toolbar) -->
+        <div class="flex-1 pb-8 w-full">
+          <table class="w-full text-left border-collapse" formArrayName="movimientos">
+            <thead class="sticky top-[68px] bg-slate-100 shadow-sm z-30 border-b border-slate-200">
+              <tr class="text-slate-600 text-sm">
+                <th class="py-2 px-3 font-semibold" [ngClass]="modoAvanzado() ? 'w-[20%]' : 'w-[50%]'">Cuenta</th>
+                <th *ngIf="modoAvanzado()" class="py-2 px-2 font-semibold w-[15%]">Tercero (Opc)</th>
+                <th *ngIf="modoAvanzado()" class="py-2 px-2 font-semibold w-[15%]">C. Costo (Opc)</th>
+                <th *ngIf="modoAvanzado()" class="py-2 px-2 font-semibold w-[20%]">Glosa de línea</th>
+                <th class="py-2 px-2 font-semibold text-right" [ngClass]="modoAvanzado() ? 'w-[12%]' : 'w-[20%]'">Debe ($)</th>
+                <th class="py-2 px-2 font-semibold text-right" [ngClass]="modoAvanzado() ? 'w-[12%]' : 'w-[20%]'">Haber ($)</th>
+                <th class="py-2 px-2 font-semibold w-[6%] text-center"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let mov of movimientos.controls; let i=index" [formGroupName]="i" class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors bg-white">
+                <td class="p-2 pl-3">
+                  <div class="flex items-center space-x-1">
+                    <input type="text"
+                           placeholder="Buscar cuenta..."
+                           formControlName="cuentaCodigo"
+                           [matAutocomplete]="autoCuenta"
+                           class="w-full h-10 px-2 border border-slate-300 rounded text-sm bg-white outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors">
+                    <mat-autocomplete #autoCuenta="matAutocomplete" [displayWith]="displayCuenta">
+                      <mat-option *ngFor="let cuenta of cuentas() | filterCuentas: mov.get('cuentaCodigo')?.value" [value]="cuenta.codigo">
+                        {{ cuenta.codigo }} - {{ cuenta.nombre }}
+                      </mat-option>
+                    </mat-autocomplete>
+                    <button type="button" mat-icon-button color="primary" tabindex="-1" matTooltip="Crear nueva cuenta" (click)="openCrearCuentaDialog(i)" class="scale-75 shrink-0">
+                      <mat-icon>add_circle</mat-icon>
+                    </button>
+                  </div>
+                </td>
+
+                <td *ngIf="modoAvanzado()" class="p-2">
+                  <div class="flex items-center space-x-1">
+                    <select formControlName="terceroRut"
+                            class="w-full h-10 px-2 border border-slate-300 rounded text-sm bg-white outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors">
+                      <option [value]="null">-- Ninguno --</option>
+                      <option *ngFor="let tercero of terceros()" [value]="tercero.rut">
+                        {{ tercero.razonSocial }}
+                      </option>
+                    </select>
+                    <button type="button" mat-icon-button color="primary" tabindex="-1" matTooltip="Crear nuevo tercero" (click)="openCrearTerceroDialog(i)" class="scale-75 shrink-0">
+                      <mat-icon>add_circle</mat-icon>
+                    </button>
+                  </div>
+                </td>
+
+                <td *ngIf="modoAvanzado()" class="p-2">
+                  <div class="flex items-center space-x-1">
+                    <select formControlName="centroCostoId"
+                            class="w-full h-10 px-2 border border-slate-300 rounded text-sm bg-white outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors">
+                      <option [value]="null">-- Ninguno --</option>
+                      <option *ngFor="let cc of centrosCosto()" [value]="cc.id">
+                        {{ cc.nombre }}
+                      </option>
+                    </select>
+                    <button type="button" mat-icon-button color="primary" tabindex="-1" matTooltip="Crear nuevo centro de costo" (click)="openCrearCentroCostoDialog(i)" class="scale-75 shrink-0">
+                      <mat-icon>add_circle</mat-icon>
+                    </button>
+                  </div>
+                </td>
+
+                <td *ngIf="modoAvanzado()" class="p-2">
+                  <input formControlName="glosaLinea" type="text" placeholder="Detalle..."
+                         class="w-full h-10 px-3 border border-slate-300 rounded text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors">
+                </td>
+
+                <td class="p-2">
+                  <input formControlName="debe" type="number" min="0" placeholder="0"
+                         (focus)="$any($event.target).select()"
+                         class="w-full h-10 px-3 border border-slate-300 rounded text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors text-right text-emerald-700 font-bold">
+                </td>
+
+                <td class="p-2">
+                  <input formControlName="haber" type="number" min="0" placeholder="0"
+                         (focus)="$any($event.target).select()"
+                         class="w-full h-10 px-3 border border-slate-300 rounded text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-colors text-right text-rose-700 font-bold">
+                </td>
+
+                <td class="p-2 text-center">
+                  <button type="button" mat-icon-button color="warn" tabindex="-1" (click)="removeMovimiento(i)" [disabled]="movimientos.length <= 2" title="Eliminar línea">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </td>
+
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. FOOTER TOTALES (Fijo abajo, nunca scrollea) -->
+    <div class="flex-none bg-slate-800 text-white p-4 flex justify-end space-x-12 border-t border-slate-700 z-50">
+      <div class="text-right">
+        <div class="text-slate-400 text-xs font-medium uppercase tracking-widest mb-1">Total Debe</div>
+        <div class="text-2xl font-extrabold text-emerald-400 font-mono tracking-tight leading-none">
+          {{ totales().debe | currency:'CLP':'symbol-narrow':'1.0-0' }}
+        </div>
+      </div>
+      
+      <div class="text-right">
+        <div class="text-slate-400 text-xs font-medium uppercase tracking-widest mb-1">Total Haber</div>
+        <div class="text-2xl font-extrabold text-rose-400 font-mono tracking-tight leading-none">
+          {{ totales().haber | currency:'CLP':'symbol-narrow':'1.0-0' }}
+        </div>
+      </div>
+    </div>

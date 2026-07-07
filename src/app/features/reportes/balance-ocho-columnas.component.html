@@ -1,0 +1,202 @@
+<div class="flex flex-col h-[calc(100vh-128px)] p-4 md:px-6 max-w-7xl mx-auto">
+  <div class="flex flex-col gap-3 mb-4 shrink-0">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Balance Tributario</h1>
+        <p class="text-slate-500 text-sm">Balance de Comprobación y de Saldos (8 Columnas)</p>
+      </div>
+      <div class="flex space-x-2">
+        <button *ngIf="balanceResource().data" mat-flat-button color="primary" class="!bg-emerald-600 hover:!bg-emerald-700 !h-9" (click)="exportarExcel()">
+          <mat-icon class="!text-lg !leading-5 !w-5 !h-5">table_chart</mat-icon>
+          Excel
+        </button>
+        <button *ngIf="balanceResource().data" mat-flat-button color="primary" class="!bg-violet-600 hover:!bg-violet-700 !h-9" (click)="exportarPdf()">
+          <mat-icon class="!text-lg !leading-5 !w-5 !h-5">picture_as_pdf</mat-icon>
+          PDF
+        </button>
+      </div>
+    </div>
+    <!-- Filtros -->
+    <div class="flex flex-wrap items-center gap-3 bg-white p-2 md:px-4 rounded-xl border border-slate-200 shadow-sm">
+      <mat-form-field appearance="outline" class="flex-1 min-w-[140px] !mb-[-1.25em]">
+        <mat-label>Año</mat-label>
+        <mat-select [ngModel]="anioSeleccionado()" (ngModelChange)="anioSeleccionado.set($event)">
+          <mat-option *ngFor="let a of anios" [value]="a">{{ a }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1 border border-slate-200 rounded-lg p-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase px-2">Desde:</span>
+          <mat-form-field appearance="outline" class="w-20 !mb-[-1.25em]">
+            <mat-select [ngModel]="diaDesde()" (ngModelChange)="diaDesde.set($event)">
+              <mat-option *ngFor="let d of dias" [value]="d">{{ d }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-28 !mb-[-1.25em]">
+            <mat-select [ngModel]="mesDesde()" (ngModelChange)="mesDesde.set($event)">
+              <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="flex items-center gap-1 border border-slate-200 rounded-lg p-1">
+          <span class="text-xs font-semibold text-slate-500 uppercase px-2">Hasta:</span>
+          <mat-form-field appearance="outline" class="w-20 !mb-[-1.25em]">
+            <mat-select [ngModel]="diaHasta()" (ngModelChange)="diaHasta.set($event)">
+              <mat-option *ngFor="let d of dias" [value]="d">{{ d }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-28 !mb-[-1.25em]">
+            <mat-select [ngModel]="mesHasta()" (ngModelChange)="mesHasta.set($event)">
+              <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="balanceResource().loading" class="py-12 flex justify-center">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="balanceResource().error" class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100">
+    <p class="font-medium">Error al cargar el balance</p>
+    <p class="text-sm mt-1">{{ balanceResource().error }}</p>
+  </div>
+
+  <div *ngIf="!balanceResource().loading && !balanceResource().error && balanceResource().data" class="flex-1 min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    <div class="flex-1 overflow-auto relative">
+      <table mat-table [dataSource]="dataSource()" class="w-full dense-table">
+        <!-- Nombre de la cuenta -->
+        <ng-container matColumnDef="cuenta">
+          <th mat-header-cell *matHeaderCellDef class="font-bold text-slate-700 !bg-slate-50 border-r border-slate-200 whitespace-nowrap min-w-[250px]"> Cuenta Contable </th>
+          <td mat-cell *matCellDef="let element" class="border-r whitespace-nowrap"
+              [ngClass]="{'font-bold !bg-slate-50 text-slate-800 border-slate-200': element.isTotalRow, 'font-medium border-slate-100': !element.isTotalRow, 'border-t-2 !border-t-slate-400': element.isSumaRow}"> 
+            <span class="text-slate-400 mr-2" *ngIf="element.cuentaCodigo">{{element.cuentaCodigo}}</span> 
+            {{element.cuentaNombre}} 
+          </td>
+        </ng-container>
+
+        <!-- Débitos -->
+        <ng-container matColumnDef="debe">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-slate-700 !bg-slate-50"> Débitos </th>
+          <td mat-cell *matCellDef="let element" class="text-right"
+              [ngClass]="{'font-bold !bg-slate-50 text-slate-800': element.isTotalRow, 'text-slate-600': !element.isTotalRow, 'border-t-2 !border-t-slate-400': element.isSumaRow}"> 
+            {{element.totalDebe !== null ? (element.totalDebe | currency:'CLP':'':'1.0-0') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Créditos -->
+        <ng-container matColumnDef="haber">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-slate-700 !bg-slate-50 border-r border-slate-200"> Créditos </th>
+          <td mat-cell *matCellDef="let element" class="text-right border-r"
+              [ngClass]="{'font-bold !bg-slate-50 text-slate-800 border-slate-200': element.isTotalRow, 'text-slate-600 border-slate-100': !element.isTotalRow, 'border-t-2 !border-t-slate-400': element.isSumaRow}"> 
+            {{element.totalHaber !== null ? (element.totalHaber | currency:'CLP':'':'1.0-0') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Saldo Deudor -->
+        <ng-container matColumnDef="saldoDeudor">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-blue-700 !bg-blue-50"> Deudor </th>
+          <td mat-cell *matCellDef="let element" class="text-right" 
+              [ngClass]="{
+                'text-blue-600 font-medium': element.saldoDeudor > 0 && !element.isTotalRow, 
+                'text-slate-300': element.saldoDeudor === 0 && !element.isTotalRow,
+                'font-bold !bg-slate-50 text-slate-800': element.isTotalRow,
+                'border-t-2 !border-t-slate-400': element.isSumaRow
+              }"> 
+            {{element.saldoDeudor !== null ? (element.saldoDeudor > 0 || element.isTotalRow ? (element.saldoDeudor | currency:'CLP':'':'1.0-0') : '-') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Saldo Acreedor -->
+        <ng-container matColumnDef="saldoAcreedor">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-blue-700 !bg-blue-50 border-r border-slate-200"> Acreedor </th>
+          <td mat-cell *matCellDef="let element" class="text-right border-r" 
+              [ngClass]="{
+                'text-blue-600 font-medium': element.saldoAcreedor > 0 && !element.isTotalRow, 
+                'text-slate-300': element.saldoAcreedor === 0 && !element.isTotalRow,
+                'font-bold !bg-slate-50 text-slate-800 border-slate-200': element.isTotalRow,
+                'border-slate-100': !element.isTotalRow,
+                'border-t-2 !border-t-slate-400': element.isSumaRow
+              }"> 
+            {{element.saldoAcreedor !== null ? (element.saldoAcreedor > 0 || element.isTotalRow ? (element.saldoAcreedor | currency:'CLP':'':'1.0-0') : '-') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Activo -->
+        <ng-container matColumnDef="activo">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-emerald-700 !bg-emerald-50"> Activo </th>
+          <td mat-cell *matCellDef="let element" class="text-right" 
+              [ngClass]="{
+                'text-emerald-600 font-medium': element.activo > 0 && !element.isTotalRow, 
+                'text-slate-300': element.activo === 0 && !element.isTotalRow,
+                'font-bold !bg-slate-50 text-slate-800': element.isTotalRow,
+                'border-t-2 !border-t-slate-400': element.isSumaRow
+              }"> 
+            {{element.activo !== null ? (element.activo > 0 || element.isTotalRow ? (element.activo | currency:'CLP':'':'1.0-0') : '-') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Pasivo -->
+        <ng-container matColumnDef="pasivo">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-emerald-700 !bg-emerald-50 border-r border-slate-200"> Pasivo </th>
+          <td mat-cell *matCellDef="let element" class="text-right border-r" 
+              [ngClass]="{
+                'text-emerald-600 font-medium': element.pasivo > 0 && !element.isTotalRow, 
+                'text-slate-300': element.pasivo === 0 && !element.isTotalRow,
+                'font-bold !bg-slate-50 text-slate-800 border-slate-200': element.isTotalRow,
+                'border-slate-100': !element.isTotalRow,
+                'border-t-2 !border-t-slate-400': element.isSumaRow
+              }"> 
+            {{element.pasivo !== null ? (element.pasivo > 0 || element.isTotalRow ? (element.pasivo | currency:'CLP':'':'1.0-0') : '-') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Pérdida -->
+        <ng-container matColumnDef="perdida">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-rose-700 !bg-rose-50"> Pérdida </th>
+          <td mat-cell *matCellDef="let element" class="text-right" 
+              [ngClass]="{
+                'text-rose-600 font-medium': element.perdida > 0 && !element.isTotalRow, 
+                'text-slate-300': element.perdida === 0 && !element.isTotalRow,
+                'font-bold !bg-slate-50 text-slate-800': element.isTotalRow,
+                'border-t-2 !border-t-slate-400': element.isSumaRow
+              }"> 
+            {{element.perdida !== null ? (element.perdida > 0 || element.isTotalRow ? (element.perdida | currency:'CLP':'':'1.0-0') : '-') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Ganancia -->
+        <ng-container matColumnDef="ganancia">
+          <th mat-header-cell *matHeaderCellDef class="text-right font-bold text-rose-700 !bg-rose-50"> Ganancia </th>
+          <td mat-cell *matCellDef="let element" class="text-right" 
+              [ngClass]="{
+                'text-rose-600 font-medium': element.ganancia > 0 && !element.isTotalRow, 
+                'text-slate-300': element.ganancia === 0 && !element.isTotalRow,
+                'font-bold !bg-slate-50 text-slate-800': element.isTotalRow,
+                'border-t-2 !border-t-slate-400': element.isSumaRow
+              }"> 
+            {{element.ganancia !== null ? (element.ganancia > 0 || element.isTotalRow ? (element.ganancia | currency:'CLP':'':'1.0-0') : '-') : ''}} 
+          </td>
+        </ng-container>
+
+        <!-- Header -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" class="!bg-slate-50 shadow-sm z-20"></tr>
+        <!-- Rows -->
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
+            class="transition-colors" 
+            [ngClass]="{
+              'hover:bg-slate-50/50': !row.isTotalRow,
+              '!bg-slate-50 sticky z-10 shadow-[0_-1px_0_#e2e8f0,0_1px_0_#e2e8f0]': row.isTotalRow,
+              'bottom-[72px]': row.isSumaRow,
+              'bottom-[36px]': row.isUtilidad,
+              'bottom-0': row.isSumaTotal
+            }"></tr>
+      </table>
+    </div>
+
+  </div>
+</div>

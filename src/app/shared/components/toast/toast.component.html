@@ -1,0 +1,38 @@
+<div class="flex items-start p-4 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 min-w-[320px] max-w-[400px]"
+     [ngClass]="{
+       'bg-emerald-50/90 border-emerald-200 text-emerald-800': data.type === 'success',
+       'bg-red-50/90 border-red-200 text-red-800': data.type === 'error',
+       'bg-amber-50/90 border-amber-200 text-amber-800': data.type === 'warning',
+       'bg-blue-50/90 border-blue-200 text-blue-800': data.type === 'info'
+     }">
+  
+  <div class="flex-shrink-0 mr-3 mt-0.5">
+    <!-- Success Icon -->
+    <mat-icon *ngIf="data.type === 'success'" class="text-emerald-500">check_circle</mat-icon>
+    <!-- Error Icon -->
+    <mat-icon *ngIf="data.type === 'error'" class="text-red-500">error</mat-icon>
+    <!-- Warning Icon -->
+    <mat-icon *ngIf="data.type === 'warning'" class="text-amber-500">warning</mat-icon>
+    <!-- Info Icon -->
+    <mat-icon *ngIf="data.type === 'info'" class="text-blue-500">info</mat-icon>
+  </div>
+
+  <div class="flex-1">
+    <h3 class="text-sm font-bold mb-0.5"
+        [ngClass]="{
+          'text-emerald-900': data.type === 'success',
+          'text-red-900': data.type === 'error',
+          'text-amber-900': data.type === 'warning',
+          'text-blue-900': data.type === 'info'
+        }">
+      {{ getTitle(data.type) }}
+    </h3>
+    <p class="text-sm opacity-90">{{ data.message }}</p>
+  </div>
+
+  <div class="flex-shrink-0 ml-3">
+    <button mat-icon-button (click)="close()" class="!w-6 !h-6 leading-none" style="min-width: 24px;">
+      <mat-icon class="text-lg opacity-60 hover:opacity-100 transition-opacity" style="height: 18px; width: 18px; font-size: 18px; display: inline-flex; align-items: center; justify-content: center;">close</mat-icon>
+    </button>
+  </div>
+</div>

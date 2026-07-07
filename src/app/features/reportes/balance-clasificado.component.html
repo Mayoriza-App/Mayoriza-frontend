@@ -1,0 +1,251 @@
+<div class="max-w-7xl mx-auto space-y-6 animate-fade-in pb-20">
+  <!-- Header -->
+  <div class="flex flex-col gap-2 bg-white p-3 md:p-4 rounded-xl shadow-sm border border-slate-200">
+    <div class="flex flex-col md:flex-row md:items-center justify-between">
+      <div>
+        <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center">
+          Balance Clasificado
+        </h1>
+        <p class="text-xs text-slate-500">
+          Bajo norma IFRS. <span *ngIf="appState.empresaRutActiva()">Empresa: {{ appState.empresaRutActiva() }}</span>
+        </p>
+      </div>
+      <div class="mt-2 md:mt-0">
+        <button mat-flat-button color="primary" class="!bg-violet-600 hover:!bg-violet-700 !rounded-lg px-4 py-1" (click)="exportarPdf()" [disabled]="isLoading() || totalActivos() === 0">
+          <mat-icon class="text-sm">picture_as_pdf</mat-icon> <span class="text-sm">Descargar PDF</span>
+        </button>
+      </div>
+    </div>
+    <!-- Filtros -->
+    <div class="flex flex-wrap gap-3 pt-2 border-t border-slate-100 items-end">
+      <div class="flex flex-col"><span class="text-xs font-medium text-slate-500 mb-1">Año</span>
+        <mat-form-field appearance="outline" class="w-24">
+          <mat-select [ngModel]="anioSeleccionado()" (ngModelChange)="anioSeleccionado.set($event)">
+            <mat-option *ngFor="let a of anios" [value]="a">{{ a }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      
+      <div class="flex flex-col"><span class="text-xs font-medium text-slate-500 mb-1">Desde</span>
+        <div class="flex gap-1">
+          <mat-form-field appearance="outline" class="w-20">
+            <mat-select [ngModel]="diaDesde()" (ngModelChange)="diaDesde.set($event)">
+              <mat-option *ngFor="let d of dias" [value]="d">{{ d }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-32">
+            <mat-select [ngModel]="mesDesde()" (ngModelChange)="mesDesde.set($event)">
+              <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="flex flex-col"><span class="text-xs font-medium text-slate-500 mb-1">Hasta</span>
+        <div class="flex gap-1">
+          <mat-form-field appearance="outline" class="w-20">
+            <mat-select [ngModel]="diaHasta()" (ngModelChange)="diaHasta.set($event)">
+              <mat-option *ngFor="let d of dias" [value]="d">{{ d }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-32">
+            <mat-select [ngModel]="mesHasta()" (ngModelChange)="mesHasta.set($event)">
+              <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>   
+  </div>
+
+  <div *ngIf="isLoading()" class="flex justify-center py-20">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="error()" class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 flex items-center">
+    <mat-icon class="mr-2">error_outline</mat-icon>
+    {{ error() }}
+  </div>
+
+  <div *ngIf="!appState.empresaRutActiva()" class="bg-amber-50 text-amber-700 p-6 rounded-2xl border border-amber-200 text-center shadow-sm">
+    <mat-icon class="text-4xl mb-2">business</mat-icon>
+    <h3 class="text-lg font-bold">No hay empresa seleccionada</h3>
+    <p>Selecciona una empresa en la barra superior para ver su balance.</p>
+  </div>
+
+  <!-- Contenedor Principal a 2 Columnas -->
+  <div *ngIf="!isLoading() && appState.empresaRutActiva()" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    <!-- LADO IZQUIERDO: ACTIVOS -->
+    <div class="space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden">
+        <div class="bg-emerald-50 px-6 py-4 border-b border-emerald-100 flex justify-between items-center">
+          <h2 class="text-xl font-bold text-emerald-800">Activos</h2>
+          <mat-icon class="text-emerald-500">account_balance</mat-icon>
+        </div>
+        
+        <div class="p-0">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 border-b">
+              <tr>
+                <th class="py-3 px-4 font-semibold w-1/4">Código</th>
+                <th class="py-3 px-4 font-semibold">Cuenta</th>
+                <th class="py-3 px-4 font-semibold text-right">Monto</th>
+              </tr>
+            </thead>
+            <tbody *ngIf="activoCirculante().length > 0">
+              <tr class="bg-slate-100">
+                <td colspan="3" class="py-2 px-4 font-bold text-slate-700 uppercase text-xs tracking-wider">Activo Circulante</td>
+              </tr>
+              <tr *ngFor="let c of activoCirculante()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="py-3 px-4 font-mono text-slate-500 pl-8">{{ c.cuentaCodigo }}</td>
+                <td class="py-3 px-4 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+                <td class="py-3 px-4 text-right text-emerald-700 font-medium">{{ c.activo | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            </tbody>
+            
+            <tbody *ngIf="activoFijo().length > 0">
+              <tr class="bg-slate-100">
+                <td colspan="3" class="py-2 px-4 font-bold text-slate-700 uppercase text-xs tracking-wider">Activo Fijo</td>
+              </tr>
+              <tr *ngFor="let c of activoFijo()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="py-3 px-4 font-mono text-slate-500 pl-8">{{ c.cuentaCodigo }}</td>
+                <td class="py-3 px-4 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+                <td class="py-3 px-4 text-right text-emerald-700 font-medium">{{ c.activo | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            </tbody>
+
+            <tbody *ngIf="otrosActivos().length > 0">
+              <tr class="bg-slate-100">
+                <td colspan="3" class="py-2 px-4 font-bold text-slate-700 uppercase text-xs tracking-wider">Otros Activos</td>
+              </tr>
+              <tr *ngFor="let c of otrosActivos()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="py-3 px-4 font-mono text-slate-500 pl-8">{{ c.cuentaCodigo }}</td>
+                <td class="py-3 px-4 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+                <td class="py-3 px-4 text-right text-emerald-700 font-medium">{{ c.activo | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            </tbody>
+
+            <tbody *ngIf="activoCirculante().length === 0 && activoFijo().length === 0 && otrosActivos().length === 0">
+              <tr>
+                <td colspan="3" class="py-8 text-center text-slate-400">No hay activos registrados.</td>
+              </tr>
+            </tbody>
+            <tbody *ngIf="utilidad() < 0">
+              <tr class="border-b border-slate-200 bg-red-50/50">
+                <td class="py-3 px-4 font-mono text-slate-500">-</td>
+                <td class="py-3 px-4 font-bold text-slate-800">Pérdida del Ejercicio</td>
+                <td class="py-3 px-4 text-right font-bold text-red-600">
+                  {{ Math.abs(utilidad()) | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="bg-emerald-600 text-white px-6 py-4 flex justify-between items-center">
+          <span class="font-bold uppercase tracking-wider text-sm">Total Activos + Resultado</span>
+          <span class="font-extrabold text-xl">{{ (totalActivos() + (utilidad() < 0 ? Math.abs(utilidad()) : 0)) | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LADO DERECHO: PASIVOS Y PATRIMONIO -->
+    <div class="space-y-6">
+      
+      <!-- PASIVOS -->
+      <div class="bg-white rounded-2xl shadow-sm border border-rose-200 overflow-hidden">
+        <div class="bg-rose-50 px-6 py-4 border-b border-rose-100 flex justify-between items-center">
+          <h2 class="text-xl font-bold text-rose-800">Pasivos</h2>
+          <mat-icon class="text-rose-500">money_off</mat-icon>
+        </div>
+        
+        <div class="p-0">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 border-b">
+              <tr>
+                <th class="py-3 px-4 font-semibold w-1/4">Código</th>
+                <th class="py-3 px-4 font-semibold">Cuenta</th>
+                <th class="py-3 px-4 font-semibold text-right">Monto</th>
+              </tr>
+            </thead>
+            <tbody *ngIf="pasivoCirculante().length > 0">
+              <tr class="bg-slate-100">
+                <td colspan="3" class="py-2 px-4 font-bold text-slate-700 uppercase text-xs tracking-wider">Pasivo Circulante</td>
+              </tr>
+              <tr *ngFor="let c of pasivoCirculante()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="py-3 px-4 font-mono text-slate-500 pl-8">{{ c.cuentaCodigo }}</td>
+                <td class="py-3 px-4 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+                <td class="py-3 px-4 text-right text-rose-700 font-medium">{{ c.pasivo | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            </tbody>
+
+            <tbody *ngIf="pasivoLargoPlazo().length > 0">
+              <tr class="bg-slate-100">
+                <td colspan="3" class="py-2 px-4 font-bold text-slate-700 uppercase text-xs tracking-wider">Pasivo a Largo Plazo</td>
+              </tr>
+              <tr *ngFor="let c of pasivoLargoPlazo()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="py-3 px-4 font-mono text-slate-500 pl-8">{{ c.cuentaCodigo }}</td>
+                <td class="py-3 px-4 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+                <td class="py-3 px-4 text-right text-rose-700 font-medium">{{ c.pasivo | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+            </tbody>
+
+            <tbody *ngIf="pasivoCirculante().length === 0 && pasivoLargoPlazo().length === 0">
+              <tr>
+                <td colspan="3" class="py-8 text-center text-slate-400">No hay pasivos registrados.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="bg-rose-600 text-white px-6 py-4 flex justify-between items-center">
+          <span class="font-bold uppercase tracking-wider text-sm">Total Pasivos</span>
+          <span class="font-extrabold text-xl">{{ totalPasivos() | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+      </div>
+
+      <!-- PATRIMONIO -->
+      <div class="bg-white rounded-2xl shadow-sm border border-blue-200 overflow-hidden">
+        <div class="bg-blue-50 px-6 py-4 border-b border-blue-100 flex justify-between items-center">
+          <h2 class="text-xl font-bold text-blue-800">Patrimonio</h2>
+          <mat-icon class="text-blue-500">account_balance_wallet</mat-icon>
+        </div>
+        
+        <div class="p-0">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 border-b">
+              <tr>
+                <th class="py-3 px-4 font-semibold w-1/4">Código</th>
+                <th class="py-3 px-4 font-semibold">Cuenta</th>
+                <th class="py-3 px-4 font-semibold text-right">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of patrimonio()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td class="py-3 px-4 font-mono text-slate-500">{{ c.cuentaCodigo }}</td>
+                <td class="py-3 px-4 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+                <td class="py-3 px-4 text-right text-blue-700 font-medium">{{ c.pasivo | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+              </tr>
+              
+              <!-- Fila especial: Utilidad del Ejercicio -->
+              <tr *ngIf="utilidad() >= 0" class="border-b border-slate-200 bg-blue-50/50">
+                <td class="py-3 px-4 font-mono text-slate-500">-</td>
+                <td class="py-3 px-4 font-bold text-slate-800">Utilidad del Ejercicio</td>
+                <td class="py-3 px-4 text-right font-bold text-blue-700">
+                  {{ utilidad() | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
+          <span class="font-bold uppercase tracking-wider text-sm">Total Patrimonio + Resultado</span>
+          <span class="font-extrabold text-xl">{{ (totalPatrimonio() + (utilidad() >= 0 ? utilidad() : 0)) | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

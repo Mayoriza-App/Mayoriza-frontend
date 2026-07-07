@@ -1,0 +1,54 @@
+<div class="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+  
+  <!-- Glow Decorativo -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-violet-400/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+
+  <div class="bg-white/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-white max-w-md w-full animate-fade-in text-center">
+    
+    <div class="w-16 h-16 mx-auto bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-2xl shadow-lg flex items-center justify-center mb-6 transform rotate-3 hover:rotate-6 transition-transform">
+      <mat-icon class="text-white text-3xl h-8 w-8 leading-8">account_balance</mat-icon>
+    </div>
+
+    <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Mayoriza</h1>
+    <p class="text-slate-500 mt-2 mb-8 font-medium">Contabilidad Inteligente y Accesible</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-4">
+      <div *ngIf="authService.authError()" class="p-3 bg-red-50 text-red-600 rounded-lg text-sm mb-4 border border-red-100 flex items-start">
+        <mat-icon class="mr-2 text-sm mt-0.5">error_outline</mat-icon>
+        <span>{{ authService.authError() }}</span>
+      </div>
+
+      <div class="flex flex-col text-left">
+        <label class="text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label>
+        <input type="email" formControlName="email" 
+               class="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+               placeholder="ejemplo@empresa.com">
+        <span *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid" class="text-xs text-red-500 mt-1">
+          Ingresa un correo válido.
+        </span>
+      </div>
+
+      <div class="flex flex-col text-left">
+        <label class="text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
+        <input type="password" formControlName="password" 
+               class="px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+               placeholder="••••••••">
+        <span *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="text-xs text-red-500 mt-1">
+          La contraseña es obligatoria.
+        </span>
+      </div>
+
+      <button type="submit" 
+              [disabled]="loginForm.invalid || authService.isAuthenticating()"
+              class="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-violet-500/30 transition-all disabled:bg-slate-300 disabled:shadow-none flex justify-center items-center h-12 mt-4">
+        <mat-spinner *ngIf="authService.isAuthenticating()" diameter="20" class="mr-2"></mat-spinner>
+        <span>{{ authService.isAuthenticating() ? 'Iniciando sesión...' : 'Ingresar' }}</span>
+      </button>
+
+      <div class="mt-6 pt-4 border-t border-slate-100 text-sm text-slate-500">
+        ¿No tienes cuenta? <a href="mailto:equipo.mayoriza@gmail.com?subject=Solicitud%20de%20cuenta%20nueva%20-%20Mayoriza" class="text-violet-600 font-bold hover:underline">Contacta al administrador</a>
+      </div>
+    </form>
+
+  </div>
+</div>

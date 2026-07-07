@@ -1,0 +1,201 @@
+<div class="flex h-screen bg-slate-50 text-slate-800 font-sans">
+  
+  <!-- Sidebar (Glassmorphism effect) -->
+  <aside class="w-64 flex flex-col bg-white/80 backdrop-blur-md border-r border-slate-200 shadow-sm z-10 transition-all duration-300">
+    <div class="h-16 flex items-center px-6 border-b border-slate-100">
+      <div class="text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+        Mayoriza
+      </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      
+      <!-- MENÚ ADMIN -->
+      <ng-container *ngIf="isAdmin()">
+        <a routerLink="/admin/dashboard" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">dashboard</mat-icon>
+          <span class="font-medium">Dashboard Global</span>
+        </a>
+
+        <a routerLink="/admin/empresas" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">domain</mat-icon>
+          <span class="font-medium">Gestión Empresas</span>
+        </a>
+
+        <a routerLink="/admin/usuarios" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">people</mat-icon>
+          <span class="font-medium">Gestión Contadores</span>
+        </a>
+
+        <div class="pt-4 pb-2 px-3">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ajustes</p>
+        </div>
+
+        <a routerLink="/configuracion" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">settings</mat-icon>
+          <span class="font-medium">Mi Perfil</span>
+        </a>
+      </ng-container>
+
+      <!-- MENÚ CONTADOR -->
+      <ng-container *ngIf="!isAdmin()">
+        <a routerLink="/dashboard" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">dashboard</mat-icon>
+          <span class="font-medium">Dashboard</span>
+        </a>
+
+        <a routerLink="/comprobantes" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">input</mat-icon>
+          <span class="font-medium">Ingreso de Mov.</span>
+        </a>
+
+        <div class="pt-4 pb-2 px-3">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Reportes</p>
+        </div>
+
+        <a routerLink="/reportes/libro-diario" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">receipt_long</mat-icon>
+          <span class="font-medium">Libro Diario</span>
+        </a>
+
+        <a routerLink="/reportes/libro-mayor" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">menu_book</mat-icon>
+          <span class="font-medium">Libro Mayor</span>
+        </a>
+
+        <a routerLink="/reportes/balance" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">account_balance</mat-icon>
+          <span class="font-medium">Balance Tributario</span>
+        </a>
+
+        <div class="pt-4 pb-2 px-3">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">IFRS</p>
+        </div>
+        <a routerLink="/reportes/balance-clasificado" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">pie_chart</mat-icon>
+          <span class="font-medium">Balance Clasificado</span>
+        </a>
+
+        <a routerLink="/reportes/estado-resultados" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">trending_up</mat-icon>
+          <span class="font-medium">Estado de Resultados</span>
+        </a>
+
+        <div class="pt-4 pb-2 px-3">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Avanzado</p>
+        </div>
+
+        <a routerLink="/procesos" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">precision_manufacturing</mat-icon>
+          <span class="font-medium">Procesos Contables</span>
+        </a>
+
+        <div class="pt-4 pb-2 px-3">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ajustes</p>
+        </div>
+
+        <a routerLink="/configuracion/plan-cuentas" routerLinkActive="bg-violet-50 text-violet-700" 
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">list_alt</mat-icon>
+          <span class="font-medium">Plan de Cuentas</span>
+        </a>
+
+        <a routerLink="/configuracion" routerLinkActive="bg-violet-50 text-violet-700" [routerLinkActiveOptions]="{exact: true}"
+           class="flex items-center px-3 py-2.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <mat-icon class="mr-3 text-current">settings</mat-icon>
+          <span class="font-medium">Configuración</span>
+        </a>
+      </ng-container>
+    </nav>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    
+    <!-- Top Header -->
+    <header class="h-16 flex items-center justify-between px-8 bg-white/50 backdrop-blur-sm border-b border-slate-200 z-10">
+      <div class="flex items-center space-x-4">
+        <!-- Breadcrumb / Titulo -->
+        <h2 class="text-xl font-semibold text-slate-700">Contabilidad</h2>
+      </div>
+
+      <div class="flex items-center space-x-6">
+        
+        <!-- Empresa Activa Display (Selector Real API) -->
+        <button mat-button [matMenuTriggerFor]="empresaMenu" class="!px-4 !py-1.5 !bg-violet-100 !text-violet-800 !rounded-full !font-medium shadow-inner hover:!bg-violet-200 transition-colors flex items-center">
+          <mat-icon class="mr-2 text-sm h-5 w-5 leading-5">business</mat-icon>
+          <span class="max-w-[200px] truncate" [matTooltip]="(empresaActiva()?.razonSocial || 'Sin Empresa') + ' - RUT: ' + appState.empresaRutActiva()">
+            {{ empresaActiva()?.razonSocial || 'Seleccionar Empresa' }}
+          </span>
+          <mat-icon class="ml-1 text-sm h-5 w-5 leading-5">arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #empresaMenu="matMenu">
+          <div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Cambiar Empresa Activa</div>
+          <button mat-menu-item *ngFor="let emp of empresasActivas()" (click)="seleccionarEmpresa(emp.rut)">
+            <mat-icon class="text-violet-500">domain</mat-icon>
+            <span>{{ emp.razonSocial }} ({{ emp.rut }})</span>
+          </button>
+        </mat-menu>
+        
+        <!-- User Avatar & Profile Menu -->
+        <button [matMenuTriggerFor]="perfilMenu" class="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-bold shadow-md cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-indigo-500 transition-all border-none focus:outline-none">
+          {{ authService.currentUser()?.nombre?.charAt(0) || 'U' }}
+        </button>
+        
+        <mat-menu #perfilMenu="matMenu" class="min-w-[240px]">
+          <div class="px-4 py-4 border-b border-slate-100 bg-slate-50">
+            <p class="text-sm font-bold text-slate-800">{{ authService.currentUser()?.nombre || 'Usuario Demo' }}</p>
+            <p class="text-xs text-slate-500">{{ authService.currentUser()?.email }}</p>
+            <p class="text-[10px] font-bold text-violet-600 bg-violet-100 rounded px-1.5 py-0.5 mt-1 inline-block">
+              Rol: {{ authService.currentUser()?.rol || 'CONTADOR' }}
+            </p>
+          </div>
+          <button mat-menu-item routerLink="/configuracion">
+            <mat-icon class="text-slate-500">person_outline</mat-icon>
+            <span>Editar Mi Perfil</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()" class="!text-red-600">
+            <mat-icon class="text-red-500">logout</mat-icon>
+            <span>Cerrar Sesión</span>
+          </button>
+        </mat-menu>
+
+      </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <main class="flex-1 overflow-y-auto p-8 relative">
+      <!-- Glow Decorativo de fondo -->
+      <div class="absolute top-0 left-0 w-full h-96 bg-violet-400/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+      
+      <!-- Inactive Subscription Banner -->
+      <div *ngIf="!isAdmin() && authService.currentUser()?.activo === false" 
+           class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm animate-fade-in flex items-start">
+        <mat-icon class="text-red-500 mr-3 mt-0.5">error_outline</mat-icon>
+        <div>
+          <h3 class="text-red-800 font-bold text-sm">Suscripción Inactiva</h3>
+          <p class="text-red-700 text-sm mt-1">
+            Tu cuenta actualmente se encuentra inactiva. Tienes acceso de solo lectura a tu información, pero no puedes crear ni modificar registros.
+            Por favor, contacta a la administración para reactivar tu suscripción.
+          </p>
+        </div>
+      </div>
+
+      <!-- Router Outlet for Child Routes -->
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

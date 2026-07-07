@@ -1,0 +1,285 @@
+<div class="space-y-6 animate-fade-in">
+  
+  <div>
+    <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Configuración y Mantenedores</h1>
+    <p class="text-slate-500 mt-1">Gestiona las cuentas contables, terceros y centros de costo del sistema.</p>
+  </div>
+
+  <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden min-h-[500px]">
+    
+    <mat-tab-group animationDuration="300ms" color="primary" class="h-full custom-tabs" [(selectedIndex)]="selectedTabIndex">
+      
+      <!-- Tab: Mi Perfil -->
+      <mat-tab label="Mi Perfil">
+        <div class="p-8 max-w-2xl">
+          <h2 class="text-xl font-bold text-slate-800 mb-6">Información del Usuario</h2>
+          
+          <form [formGroup]="perfilForm" (ngSubmit)="guardarPerfil()" class="space-y-4">
+            
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Nombre Completo</mat-label>
+              <input matInput formControlName="nombre" placeholder="Juan Pérez">
+            </mat-form-field>
+
+            <div class="grid grid-cols-2 gap-4">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Correo Electrónico (No editable)</mat-label>
+                <input matInput formControlName="email">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Rol en el Sistema</mat-label>
+                <input matInput formControlName="rol">
+              </mat-form-field>
+            </div>
+
+            <div class="pt-4 border-t flex items-center justify-between">
+              <span class="text-sm font-medium" 
+                    [ngClass]="{'text-emerald-600': profileMessage.includes('exitosamente'), 'text-red-600': profileMessage.includes('Error')}">
+                {{ profileMessage }}
+              </span>
+              <button mat-flat-button color="primary" type="submit" [disabled]="perfilForm.invalid || isSavingProfile" class="!bg-violet-600 !px-8 !py-6 !rounded-xl">
+                <mat-spinner *ngIf="isSavingProfile" diameter="20" class="mr-2 inline-block"></mat-spinner>
+                Actualizar Perfil
+              </button>
+            </div>
+            
+          </form>
+        </div>
+      </mat-tab>
+
+      <!-- Tab: Empresas -->
+      <mat-tab label="Empresas" *ngIf="!isAdmin">
+        <div class="p-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Lista de Empresas -->
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Empresas Registradas</h2>
+                <div class="flex items-center space-x-2 bg-slate-100 p-1 rounded-lg">
+                  <button (click)="filtroEmpresas.set('activas')" 
+                          [ngClass]="{'bg-white shadow-sm text-slate-800': filtroEmpresas() === 'activas', 'text-slate-500 hover:text-slate-700': filtroEmpresas() !== 'activas'}"
+                          class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+                    Activas
+                  </button>
+                  <button (click)="filtroEmpresas.set('inactivas')" 
+                          [ngClass]="{'bg-white shadow-sm text-slate-800': filtroEmpresas() === 'inactivas', 'text-slate-500 hover:text-slate-700': filtroEmpresas() !== 'inactivas'}"
+                          class="px-3 py-1.5 text-sm font-medium rounded-md transition-all">
+                    Inactivas
+                  </button>
+                </div>
+              </div>
+              <table mat-table [dataSource]="empresasFiltradas()" class="w-full bg-transparent border border-slate-100 rounded-lg overflow-hidden">
+                <ng-container matColumnDef="rut">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50"> RUT </th>
+                  <td mat-cell *matCellDef="let element" class="font-mono"> {{element.rut}} </td>
+                </ng-container>
+                <ng-container matColumnDef="razonSocial">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50"> Razón Social </th>
+                  <td mat-cell *matCellDef="let element">
+                    {{element.razonSocial}}
+                    <span *ngIf="element.activa === false" class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-500 uppercase tracking-wider">Inactiva</span>
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="giro">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50"> Giro </th>
+                  <td mat-cell *matCellDef="let element" class="text-xs text-slate-500"> {{element.giro}} </td>
+                </ng-container>
+                <ng-container matColumnDef="acciones">
+                  <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 text-right"> Acciones </th>
+                  <td mat-cell *matCellDef="let element" class="text-right whitespace-nowrap">
+                    <!-- Toggle Activa/Inactiva -->
+                    <button mat-icon-button (click)="toggleActiva(element, $event)" [matTooltip]="element.activa === false ? 'Habilitar Empresa' : 'Deshabilitar Empresa'" [ngClass]="element.activa === false ? 'text-slate-400 hover:bg-slate-100' : 'text-blue-600 hover:bg-blue-50'">
+                      <mat-icon>{{ element.activa === false ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                    <!-- Habilitar Transferencia -->
+                    <button mat-icon-button *ngIf="!element.transferenciaHabilitada" (click)="habilitarTransferencia(element, $event)" matTooltip="Habilitar Transferencia" class="text-emerald-600 hover:bg-emerald-50">
+                      <mat-icon>swap_horiz</mat-icon>
+                    </button>
+                    <mat-icon *ngIf="element.transferenciaHabilitada" [matTooltip]="'Transferencia autorizada a ' + element.transferenciaDestinoEmail" class="text-amber-500 align-middle ml-2 text-xl" style="height: 20px; width: 20px;">schedule</mat-icon>
+                    <!-- Editar -->
+                    <button mat-icon-button (click)="editarEmpresa(element, $event)" matTooltip="Editar" class="text-violet-600 hover:bg-violet-50">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="empresasColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: empresasColumns;"
+                    (click)="seleccionarEmpresa(row.rut)"
+                    class="cursor-pointer transition-colors hover:bg-slate-50"
+                    [ngClass]="{
+                      'bg-indigo-50 hover:bg-indigo-100': appState.empresaRutActiva() === row.rut,
+                      'opacity-50 grayscale': row.activa === false
+                    }">
+                </tr>
+              </table>
+            </div>
+
+            <!-- Formulario Nueva Empresa -->
+            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+              <h2 class="text-xl font-bold text-slate-800 mb-4">Registrar Nueva Empresa</h2>
+              <form [formGroup]="nuevaEmpresaForm" (ngSubmit)="crearEmpresa()" class="space-y-3">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>RUT (Ej: 12345678-9)</mat-label>
+                  <input matInput formControlName="rut" placeholder="12345678-9">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Razón Social</mat-label>
+                  <input matInput formControlName="razonSocial">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Giro Comercial</mat-label>
+                  <input matInput formControlName="giro">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Dirección (Opcional)</mat-label>
+                  <input matInput formControlName="direccion">
+                </mat-form-field>
+
+                <div class="flex gap-3">
+                  <mat-form-field appearance="outline" class="w-1/2">
+                    <mat-label>Comuna (Opcional)</mat-label>
+                    <input matInput formControlName="comuna">
+                  </mat-form-field>
+                  
+                  <mat-form-field appearance="outline" class="w-1/2">
+                    <mat-label>Ciudad (Opcional)</mat-label>
+                    <input matInput formControlName="ciudad">
+                  </mat-form-field>
+                </div>
+
+                <div class="flex gap-3">
+                  <mat-form-field appearance="outline" class="w-1/2">
+                    <mat-label>Teléfono (Opcional)</mat-label>
+                    <input matInput formControlName="telefono">
+                  </mat-form-field>
+                  
+                  <mat-form-field appearance="outline" class="w-1/2">
+                    <mat-label>Correo Electrónico (Opcional)</mat-label>
+                    <input matInput formControlName="correo" type="email">
+                  </mat-form-field>
+                </div>
+
+                <div class="flex gap-3">
+                  <mat-form-field appearance="outline" class="w-1/2">
+                    <mat-label>Nombre Rep. Legal (Opcional)</mat-label>
+                    <input matInput formControlName="representanteNombre">
+                  </mat-form-field>
+                  
+                  <mat-form-field appearance="outline" class="w-1/2">
+                    <mat-label>RUT Rep. Legal (Opcional)</mat-label>
+                    <input matInput formControlName="representanteRut" placeholder="12345678-9">
+                  </mat-form-field>
+                </div>
+
+                <div class="pt-2 flex flex-col items-start gap-2">
+                  <button mat-flat-button color="primary" type="submit" [disabled]="nuevaEmpresaForm.invalid || isSavingEmpresa" class="!bg-indigo-600 w-full !py-6 !rounded-xl">
+                    <mat-spinner *ngIf="isSavingEmpresa" diameter="20" class="mr-2 inline-block"></mat-spinner>
+                    Guardar Empresa
+                  </button>
+                  <span class="text-sm font-medium w-full text-center" 
+                        [ngClass]="{'text-emerald-600': empresaMessage.includes('exitosamente'), 'text-red-600': empresaMessage.includes('Error')}">
+                    {{ empresaMessage }}
+                  </span>
+                </div>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Tab: Cuentas Contables -->
+      <mat-tab label="Plan de Cuentas">
+        <div class="p-6">
+          <div *ngIf="cuentasResource().loading" class="py-12 flex justify-center"><mat-spinner diameter="40"></mat-spinner></div>
+          <div *ngIf="cuentasResource().error" class="text-red-500">{{ cuentasResource().error }}</div>
+          
+          <table *ngIf="!cuentasResource().loading && !cuentasResource().error" mat-table [dataSource]="cuentasResource().data!" class="w-full bg-transparent">
+            
+            <ng-container matColumnDef="codigo">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Código </th>
+              <td mat-cell *matCellDef="let element" class="!text-slate-800 !font-bold font-mono !border-b-slate-50"> {{element.codigo}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Nombre de la Cuenta </th>
+              <td mat-cell *matCellDef="let element" class="!text-slate-700 !border-b-slate-50"> {{element.nombre}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Clasificación </th>
+              <td mat-cell *matCellDef="let element" class="!border-b-slate-50"> 
+                <span class="px-3 py-1 bg-violet-50 text-violet-700 rounded-full text-xs font-semibold border border-violet-100">{{element.tipo}}</span>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="cuentasColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: cuentasColumns;" class="hover:bg-slate-50/50 transition-colors"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab: Terceros -->
+      <mat-tab label="Terceros (Clientes/Prov)">
+        <div class="p-6">
+          <div *ngIf="tercerosResource().loading" class="py-12 flex justify-center"><mat-spinner diameter="40"></mat-spinner></div>
+          <div *ngIf="tercerosResource().error" class="text-red-500">{{ tercerosResource().error }}</div>
+          
+          <table *ngIf="!tercerosResource().loading && !tercerosResource().error" mat-table [dataSource]="tercerosResource().data!" class="w-full bg-transparent">
+            
+            <ng-container matColumnDef="rut">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> RUT </th>
+              <td mat-cell *matCellDef="let element" class="!text-slate-800 !font-medium !border-b-slate-50"> {{element.rut}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="razonSocial">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Razón Social </th>
+              <td mat-cell *matCellDef="let element" class="!text-slate-700 !border-b-slate-50"> {{element.razonSocial}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="giro">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Giro </th>
+              <td mat-cell *matCellDef="let element" class="!text-slate-500 !text-sm !border-b-slate-50"> {{element.giro || 'Sin Especificar'}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="tercerosColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: tercerosColumns;" class="hover:bg-slate-50/50 transition-colors"></tr>
+          </table>
+        </div>
+      </mat-tab>
+
+      <!-- Tab: Centros de Costo -->
+      <mat-tab label="Centros de Costo">
+        <div class="p-6">
+          <div *ngIf="centrosCostoResource().loading" class="py-12 flex justify-center"><mat-spinner diameter="40"></mat-spinner></div>
+          <div *ngIf="centrosCostoResource().error" class="text-red-500">{{ centrosCostoResource().error }}</div>
+          
+          <table *ngIf="!centrosCostoResource().loading && !centrosCostoResource().error" mat-table [dataSource]="centrosCostoResource().data!" class="w-full bg-transparent">
+            
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> ID </th>
+              <td mat-cell *matCellDef="let element" class="!text-slate-800 !font-medium !border-b-slate-50"> {{element.id}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Departamento / Proyecto </th>
+              <td mat-cell *matCellDef="let element" class="!text-slate-700 !border-b-slate-50"> {{element.nombre}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="centrosCostoColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: centrosCostoColumns;" class="hover:bg-slate-50/50 transition-colors"></tr>
+          </table>
+          
+          <div *ngIf="centrosCostoResource().data?.length === 0" class="text-slate-500 py-6">
+            Esta empresa no tiene centros de costo configurados.
+          </div>
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+  </div>
+</div>

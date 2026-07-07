@@ -1,0 +1,128 @@
+<div class="max-w-4xl mx-auto space-y-6 animate-fade-in pb-20">
+  <!-- Header -->
+  <div class="flex flex-col gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+    <div class="flex flex-col md:flex-row md:items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Estado de Resultados Integral</h1>
+        <p class="text-slate-500 mt-1">
+          Demostración de rentabilidad. <span *ngIf="appState.empresaRutActiva()">Empresa: {{ appState.empresaRutActiva() }}</span>
+        </p>
+      </div>
+      <div class="mt-4 md:mt-0 space-x-3">
+        <button mat-flat-button color="primary" class="!bg-violet-600 hover:!bg-violet-700 !rounded-xl px-6 py-2" (click)="exportarPdf()" [disabled]="isLoading() || (ingresos().length === 0 && gastos().length === 0)">
+          <mat-icon>picture_as_pdf</mat-icon> Descargar PDF
+        </button>
+      </div>
+    </div>
+    <!-- Filtros -->
+    <div class="flex flex-wrap gap-4 pt-2 border-t border-slate-100">
+      <mat-form-field appearance="outline" class="flex-1 min-w-[140px]">
+        <mat-label>Año</mat-label>
+        <mat-select [ngModel]="anioSeleccionado()" (ngModelChange)="anioSeleccionado.set($event)">
+          <mat-option *ngFor="let a of anios" [value]="a">{{ a }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="flex-1 min-w-[180px]">
+        <mat-label>Mes</mat-label>
+        <mat-select [ngModel]="mesSeleccionado()" (ngModelChange)="mesSeleccionado.set($event)">
+          <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="flex justify-center py-20">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="error()" class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 flex items-center">
+    <mat-icon class="mr-2">error_outline</mat-icon>
+    {{ error() }}
+  </div>
+
+  <div *ngIf="!appState.empresaRutActiva()" class="bg-amber-50 text-amber-700 p-6 rounded-2xl border border-amber-200 text-center shadow-sm">
+    <mat-icon class="text-4xl mb-2">business</mat-icon>
+    <h3 class="text-lg font-bold">No hay empresa seleccionada</h3>
+    <p>Selecciona una empresa en la barra superior para ver el reporte.</p>
+  </div>
+
+  <!-- Contenedor Escalonado -->
+  <div *ngIf="!isLoading() && appState.empresaRutActiva()" class="space-y-6">
+    
+    <!-- INGRESOS -->
+    <div class="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden">
+      <div class="bg-emerald-50 px-6 py-4 border-b border-emerald-100 flex justify-between items-center">
+        <h2 class="text-xl font-bold text-emerald-800">Ingresos Operacionales y Ganancias</h2>
+        <mat-icon class="text-emerald-500">trending_up</mat-icon>
+      </div>
+      
+      <div class="p-0">
+        <table class="w-full text-left text-sm">
+          <tbody>
+            <tr *ngFor="let c of ingresos()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="py-3 px-6 font-mono text-slate-500 w-1/4">{{ c.cuentaCodigo }}</td>
+              <td class="py-3 px-6 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+              <td class="py-3 px-6 text-right text-emerald-700 font-medium w-1/4">{{ c.ganancia | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+            </tr>
+            <tr *ngIf="ingresos().length === 0">
+              <td colspan="3" class="py-8 text-center text-slate-400">No hay ingresos registrados en el periodo.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="bg-emerald-600 text-white px-6 py-3 flex justify-between items-center">
+        <span class="font-bold uppercase tracking-wider text-sm">Total Ingresos</span>
+        <span class="font-bold text-lg">{{ totalIngresos() | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <!-- GASTOS -->
+    <div class="bg-white rounded-2xl shadow-sm border border-rose-200 overflow-hidden">
+      <div class="bg-rose-50 px-6 py-4 border-b border-rose-100 flex justify-between items-center">
+        <h2 class="text-xl font-bold text-rose-800">Costos, Gastos y Pérdidas</h2>
+        <mat-icon class="text-rose-500">trending_down</mat-icon>
+      </div>
+      
+      <div class="p-0">
+        <table class="w-full text-left text-sm">
+          <tbody>
+            <tr *ngFor="let c of gastos()" class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+              <td class="py-3 px-6 font-mono text-slate-500 w-1/4">{{ c.cuentaCodigo }}</td>
+              <td class="py-3 px-6 font-medium text-slate-700">{{ c.cuentaNombre }}</td>
+              <td class="py-3 px-6 text-right text-rose-700 font-medium w-1/4">({{ c.perdida | currency:'CLP':'symbol-narrow':'1.0-0' }})</td>
+            </tr>
+            <tr *ngIf="gastos().length === 0">
+              <td colspan="3" class="py-8 text-center text-slate-400">No hay gastos registrados en el periodo.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="bg-rose-600 text-white px-6 py-3 flex justify-between items-center">
+        <span class="font-bold uppercase tracking-wider text-sm">Total Gastos</span>
+        <span class="font-bold text-lg">({{ totalGastos() | currency:'CLP':'symbol-narrow':'1.0-0' }})</span>
+      </div>
+    </div>
+
+    <!-- RESULTADO DEL EJERCICIO -->
+    <div class="px-6 py-8 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center border"
+         [ngClass]="utilidad() >= 0 ? 'bg-indigo-900 border-indigo-700' : 'bg-red-900 border-red-700'">
+      <div class="flex items-center space-x-4 mb-4 md:mb-0">
+        <div class="p-3 rounded-full" [ngClass]="utilidad() >= 0 ? 'bg-indigo-800 text-emerald-400' : 'bg-red-800 text-rose-400'">
+          <mat-icon class="text-4xl">{{ utilidad() >= 0 ? 'emoji_events' : 'warning' }}</mat-icon>
+        </div>
+        <div>
+          <div class="font-bold uppercase tracking-wider text-sm text-slate-300">Resultado Neto del Ejercicio</div>
+          <div class="text-xs" [ngClass]="utilidad() >= 0 ? 'text-indigo-300' : 'text-red-300'">
+            {{ utilidad() >= 0 ? '¡Felicidades! La empresa es rentable.' : 'Alerta: La empresa presenta pérdidas operacionales.' }}
+          </div>
+        </div>
+      </div>
+      <span class="font-extrabold text-4xl font-mono text-white">
+        {{ utilidad() | currency:'CLP':'symbol-narrow':'1.0-0' }}
+      </span>
+    </div>
+
+  </div>
+</div>

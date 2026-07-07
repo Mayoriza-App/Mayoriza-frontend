@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* You can add global styles to this file, and also import other style files */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* FIX: Tailwind Preflight rompe los bordes de Angular Material (mdc-notched-outline) */
+.mdc-notched-outline__leading {
+  border-left-width: 1px !important;
+  border-top-width: 1px !important;
+  border-bottom-width: 1px !important;
+  border-right-width: 0 !important;
+}
+.mdc-notched-outline__notch {
+  border-bottom-width: 1px !important;
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
+}
+.mdc-notched-outline:not(.mdc-notched-outline--notched) .mdc-notched-outline__notch {
+  border-top-width: 1px !important;
+}
+.mdc-notched-outline__trailing {
+  border-right-width: 1px !important;
+  border-top-width: 1px !important;
+  border-bottom-width: 1px !important;
+  border-left-width: 0 !important;
+}
+
+/* Custom Material Tabs Styling */
+.custom-tabs .mdc-tab {
+  background-color: transparent !important;
+  color: #64748b !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.025em !important;
+}
+.custom-tabs .mdc-tab--active {
+  color: #6d28d9 !important;
+  font-weight: 700 !important;
+}
+.custom-tabs .mdc-tab-indicator__content--underline {
+  border-color: #7c3aed !important;
+  border-width: 3px !important;
+}
+
+/* Custom Toast Notification Container */
+.custom-toast-panel {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.custom-toast-panel .mat-mdc-snack-bar-container {
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.custom-toast-panel .mdc-snackbar__surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.custom-toast-panel .mdc-snackbar__label {
+  padding: 0 !important;
+}
+
+/* Material Symbols Outlined Fix */
+.mat-icon {
+  font-family: 'Material Symbols Outlined' !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  line-height: 1 !important;
+  vertical-align: middle;
+}
+
+/* Fix disabled buttons (to override Tailwind !bg-* classes and improve readability) */
+button:disabled,
+.mat-mdc-button:disabled,
+.mat-mdc-unelevated-button:disabled,
+.mat-mdc-raised-button:disabled,
+.mat-mdc-outlined-button:disabled {
+  background-color: #e2e8f0 !important; /* bg-slate-200 */
+  color: #64748b !important; /* text-slate-500 */
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.8 !important;
+}

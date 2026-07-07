@@ -1,0 +1,141 @@
+<div class="flex flex-col h-[calc(100vh-128px)] p-4 md:px-6 max-w-7xl mx-auto animate-fade-in">
+  <div class="flex flex-col gap-3 mb-4 shrink-0">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Libro Diario General</h1>
+        <p class="text-slate-500 text-sm">Consulta de movimientos agrupados por mes.</p>
+      </div>
+      <div class="flex space-x-2">
+        <button *ngIf="reportData() && reportData()!.lineas.length > 0" mat-flat-button color="primary" class="!bg-emerald-600 hover:!bg-emerald-700 !h-9" (click)="exportarExcel()">
+          <mat-icon class="!text-lg !leading-5 !w-5 !h-5">table_chart</mat-icon>
+          Excel
+        </button>
+      </div>
+    </div>
+    <!-- Filtros -->
+    <div class="flex flex-wrap items-center gap-3 bg-white p-2 md:px-4 rounded-xl border border-slate-200 shadow-sm">
+      <mat-form-field appearance="outline" class="w-32 !mb-[-1.25em]">
+        <mat-label>Año</mat-label>
+        <mat-select [ngModel]="selectedAnio()" (ngModelChange)="selectedAnio.set($event)">
+          <mat-option *ngFor="let a of anios()" [value]="a">{{ a }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline" class="w-48 !mb-[-1.25em]">
+        <mat-label>Mes</mat-label>
+        <mat-select [ngModel]="selectedMes()" (ngModelChange)="selectedMes.set($event)">
+          <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="flex-1 flex justify-center py-20">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="error()" class="shrink-0 bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 flex items-center">
+    <mat-icon class="mr-2">error_outline</mat-icon>
+    {{ error() }}
+  </div>
+
+  <div *ngIf="!appState.empresaRutActiva()" class="shrink-0 bg-amber-50 text-amber-700 p-6 rounded-2xl border border-amber-200 text-center shadow-sm">
+    <mat-icon class="text-4xl mb-2">business</mat-icon>
+    <h3 class="text-lg font-bold">No hay empresa seleccionada</h3>
+    <p>Selecciona una empresa en la barra superior para ver el reporte.</p>
+  </div>
+
+  <!-- Table Container (Scrollable) -->
+  <div *ngIf="!isLoading() && reportData() && appState.empresaRutActiva()" class="flex-1 min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+    
+    <div class="flex-1 overflow-auto relative">
+      <table mat-table [dataSource]="reportData()!.lineas" class="w-full bg-transparent min-w-[800px] dense-table">
+        
+        <!-- Dia Column -->
+        <ng-container matColumnDef="dia">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold"> Día </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-600"> {{element.dia}} </td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+
+        <!-- Tipo Column -->
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold"> Tipo </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-600"> {{element.tipo}} </td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+
+        <!-- Comp Column -->
+        <ng-container matColumnDef="comprobante">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold"> Comp. </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-600 font-mono"> {{element.comprobante}} </td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+
+        <!-- Sec Column -->
+        <ng-container matColumnDef="secuencia">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold"> Sec. </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-600 font-mono"> {{element.secuencia}} </td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+
+        <!-- Glosa Column -->
+        <ng-container matColumnDef="glosa">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold"> Glosa </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-900 !font-medium"> {{element.glosa}} </td>
+          <td mat-footer-cell *matFooterCellDef class="!font-bold !text-slate-700 !text-right !pr-4"> 
+            <div class="py-2">Totales del Mes:</div>
+            <div class="py-2">Acumulaciones Anteriores:</div>
+            <div class="py-2 border-t border-slate-300 mt-1 pt-2">Totales del Periodo:</div>
+          </td>
+        </ng-container>
+
+        <!-- Debe Column -->
+        <ng-container matColumnDef="debe">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !text-right"> Debe </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-800 !text-right font-mono"> 
+            <span *ngIf="element.debe > 0">{{element.debe | currency:'CLP':'symbol-narrow':'1.0-0'}}</span>
+            <span *ngIf="element.debe === 0" class="text-slate-300">0</span>
+          </td>
+          <td mat-footer-cell *matFooterCellDef class="!text-right !font-bold !text-slate-800 font-mono !whitespace-nowrap">
+            <div class="py-2">{{ reportData()!.totalesMes.debe | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+            <div class="py-2">{{ reportData()!.acumulacionesAnteriores.debe | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+            <div class="py-2 border-t border-slate-300 mt-1 pt-2 text-violet-700">{{ reportData()!.totalesPeriodo.debe | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Haber Column -->
+        <ng-container matColumnDef="haber">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !text-right"> Haber </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-800 !text-right font-mono"> 
+            <span *ngIf="element.haber > 0">{{element.haber | currency:'CLP':'symbol-narrow':'1.0-0'}}</span>
+            <span *ngIf="element.haber === 0" class="text-slate-300">0</span>
+          </td>
+          <td mat-footer-cell *matFooterCellDef class="!text-right !font-bold !text-slate-800 font-mono !whitespace-nowrap">
+            <div class="py-2">{{ reportData()!.totalesMes.haber | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+            <div class="py-2">{{ reportData()!.acumulacionesAnteriores.haber | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+            <div class="py-2 border-t border-slate-300 mt-1 pt-2 text-violet-700">{{ reportData()!.totalesPeriodo.haber | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+          </td>
+        </ng-container>
+
+        <!-- Cuenta Column -->
+        <ng-container matColumnDef="cuenta">
+          <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold"> Cuenta </th>
+          <td mat-cell *matCellDef="let element" class="!text-slate-600"> {{element.cuenta}} </td>
+          <td mat-footer-cell *matFooterCellDef></td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" class="!bg-slate-50 shadow-sm z-20"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50/50 transition-colors border-b border-slate-100"></tr>
+        <tr mat-footer-row *matFooterRowDef="displayedColumns; sticky: true" class="!bg-slate-50/90 backdrop-blur-sm z-20 shadow-[0_-1px_0_#e2e8f0]"></tr>
+      </table>
+    </div>
+
+    <div *ngIf="reportData()!.lineas.length === 0" class="p-12 text-center text-slate-500">
+      <mat-icon class="text-4xl text-slate-300 mb-3">receipt_long</mat-icon>
+      <p>No se encontraron movimientos para el período seleccionado.</p>
+    </div>
+
+  </div>
+
+</div>

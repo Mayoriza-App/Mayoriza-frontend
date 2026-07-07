@@ -1,0 +1,135 @@
+<div class="space-y-6 animate-fade-in">
+  
+  <!-- Encabezado y Acción -->
+  <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Ingreso de Movimientos</h1>
+        <p class="text-slate-500 mt-1">Historial de asientos y comprobantes contables — Año <span class="font-semibold text-violet-600">{{ anioSeleccionado() }}</span>.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <mat-form-field appearance="outline" class="w-28">
+          <mat-label>Año</mat-label>
+          <mat-select [ngModel]="anioSeleccionado()" (ngModelChange)="anioSeleccionado.set($event)">
+            <mat-option *ngFor="let a of anios" [value]="a">{{ a }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <button mat-stroked-button class="!rounded-xl px-4 text-emerald-700 border-emerald-600 hover:bg-emerald-50" (click)="exportarExcel()" [disabled]="comprobantesResource().data.length === 0">
+          <mat-icon>table_chart</mat-icon> Exportar Excel
+        </button>
+        <button mat-flat-button color="primary" routerLink="/comprobantes/nuevo" 
+                class="!rounded-xl !px-6 !py-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 disabled:!bg-slate-300 disabled:!text-slate-500 disabled:!shadow-none"
+                [disabled]="authService.currentUser()?.activo === false">
+          <mat-icon>add</mat-icon>
+          Nuevo Asiento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="comprobantesResource().loading" class="flex justify-center py-20">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="comprobantesResource().error" class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 flex items-center">
+    <mat-icon class="mr-2">error_outline</mat-icon>
+    {{ comprobantesResource().error }}
+  </div>
+
+  <!-- Tabla de Comprobantes (Material + Tailwind) -->
+  <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden" 
+       *ngIf="!comprobantesResource().loading && !comprobantesResource().error">
+    
+    <table mat-table [dataSource]="comprobantesOrdenados()" class="w-full bg-transparent">
+
+      <!-- ID Column -->
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> N° </th>
+        <td mat-cell *matCellDef="let c" class="!text-slate-900 !font-medium !border-b-slate-50"> {{c.id}} </td>
+      </ng-container>
+
+      <!-- Fecha Column -->
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Fecha </th>
+        <td mat-cell *matCellDef="let c" class="!text-slate-600 !border-b-slate-50"> {{c.fecha | date:'mediumDate'}} </td>
+      </ng-container>
+
+      <!-- Tipo Column -->
+      <ng-container matColumnDef="tipo">
+        <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Tipo </th>
+        <td mat-cell *matCellDef="let c" class="!border-b-slate-50">
+          <span class="px-2.5 py-1 text-xs font-bold rounded-md border" [ngClass]="getTipoColor(c.tipo)">
+            {{ c.tipo }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Glosa Column -->
+      <ng-container matColumnDef="glosaGeneral">
+        <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100"> Glosa General </th>
+        <td mat-cell *matCellDef="let c" class="!text-slate-600 !border-b-slate-50 max-w-xs truncate" [title]="c.glosaGeneral"> 
+          {{c.glosaGeneral}} 
+        </td>
+      </ng-container>
+
+      <!-- Debe Column -->
+      <ng-container matColumnDef="debe">
+        <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100 !text-right"> Debe </th>
+        <td mat-cell *matCellDef="let c" class="!text-slate-800 !font-semibold !border-b-slate-50 !text-right"> 
+          {{c.totales?.debe | currency:'CLP':'symbol-narrow':'1.0-0'}} 
+        </td>
+      </ng-container>
+
+      <!-- Haber Column -->
+      <ng-container matColumnDef="haber">
+        <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100 !text-right"> Haber </th>
+        <td mat-cell *matCellDef="let c" class="!text-slate-800 !font-semibold !border-b-slate-50 !text-right"> 
+          {{c.totales?.haber | currency:'CLP':'symbol-narrow':'1.0-0'}} 
+        </td>
+      </ng-container>
+
+      <!-- Estado Cuadratura Column -->
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !font-semibold !border-b-slate-100 !text-center"> Estado </th>
+        <td mat-cell *matCellDef="let c" class="!border-b-slate-50 !text-center">
+          <mat-icon *ngIf="c.totales?.cuadrado" class="text-emerald-500" title="Cuadrado">check_circle</mat-icon>
+          <mat-icon *ngIf="!c.totales?.cuadrado" class="text-red-500" title="Descuadrado">warning</mat-icon>
+        </td>
+      </ng-container>
+
+      <!-- Acciones Column -->
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef class="!border-b-slate-100 !text-right">Acciones</th>
+        <td mat-cell *matCellDef="let c" class="!border-b-slate-50 !text-right">
+          
+          <button mat-icon-button (click)="exportarVoucherPdf(c)" class="!text-slate-400 hover:!text-blue-600 transition-colors" matTooltip="Descargar Voucher PDF">
+            <mat-icon>picture_as_pdf</mat-icon>
+          </button>
+
+          <button mat-icon-button [routerLink]="['/comprobantes/editar', c.id]" class="!text-slate-400 hover:!text-amber-600 transition-colors" matTooltip="Editar asiento"
+                  [disabled]="authService.currentUser()?.activo === false">
+            <mat-icon>edit</mat-icon>
+          </button>
+
+          <button mat-icon-button (click)="eliminarComprobante(c.id)" class="!text-slate-400 hover:!text-red-600 transition-colors" matTooltip="Eliminar asiento"
+                  [disabled]="authService.currentUser()?.activo === false">
+            <mat-icon>delete</mat-icon>
+          </button>
+          
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnsToDisplay" class="!bg-slate-50/50"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnsToDisplay;" class="hover:bg-slate-50/80 transition-colors group"></tr>
+    </table>
+    
+    <!-- Empty State -->
+    <div *ngIf="comprobantesResource().data?.length === 0" class="p-12 text-center text-slate-500">
+      <mat-icon class="text-4xl text-slate-300 mb-3">receipt_long</mat-icon>
+      <p>No hay comprobantes registrados en este período.</p>
+    </div>
+  </div>
+
+</div>

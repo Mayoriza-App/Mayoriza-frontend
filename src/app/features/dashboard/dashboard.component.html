@@ -1,0 +1,172 @@
+<div class="space-y-8 animate-fade-in">
+  
+  <!-- Encabezado con Filtros -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <div>
+      <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Resumen Financiero</h1>
+      <p class="text-slate-500 mt-1">
+        Período: 
+        <span class="font-semibold text-violet-600">
+        {{ meses[mesSeleccionado() - 1].label }} {{ anioSeleccionado() }}
+        </span>
+      </p>
+    </div>
+    <div class="flex gap-3 items-center">
+      <mat-form-field appearance="outline" class="w-28">
+        <mat-label>Año</mat-label>
+        <mat-select [ngModel]="anioSeleccionado()" (ngModelChange)="anioSeleccionado.set($event)">
+          <mat-option *ngFor="let a of anios" [value]="a">{{ a }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-36">
+        <mat-label>Mes</mat-label>
+        <mat-select [ngModel]="mesSeleccionado()" (ngModelChange)="mesSeleccionado.set($event)">
+          <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="balanceResource().loading || f29Resource().loading" class="flex justify-center py-20">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="balanceResource().error || f29Resource().error || evolucionResource().error" class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 flex-col items-start space-y-2">
+    <div class="flex items-center">
+      <mat-icon class="mr-2">error_outline</mat-icon>
+      Ocurrió un error cargando los datos.
+    </div>
+    <div class="text-xs">Balance Error: {{ balanceResource().error | json }}</div>
+    <div class="text-xs">F29 Error: {{ f29Resource().error | json }}</div>
+    <div class="text-xs">Evolucion Error: {{ evolucionResource().error | json }}</div>
+  </div>
+
+  <!-- Contenido Principal -->
+  <ng-container *ngIf="!balanceResource().loading && !f29Resource().loading && balanceResource().data && f29Resource().data">
+    
+    <!-- Tarjetas de Resumen Rápido (KPIs) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <!-- Resultado del Mes -->
+      <div class="bg-white/70 backdrop-blur-md rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-slate-500 font-medium">Resultado del Mes</div>
+          <div class="p-2 rounded-lg flex items-center justify-center" [ngClass]="resultadoMes() >= 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'">
+            <mat-icon>{{ resultadoMes() >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+          </div>
+        </div>
+        <div class="text-3xl font-extrabold" [ngClass]="resultadoMes() >= 0 ? 'text-emerald-600' : 'text-rose-600'">
+          {{ resultadoMes() | currency:'CLP':'symbol-narrow':'1.0-0' }}
+        </div>
+        <div class="text-xs text-slate-400 mt-2 font-medium uppercase tracking-wider">
+          {{ resultadoMes() >= 0 ? 'Utilidad del Ejercicio' : 'Pérdida del Ejercicio' }}
+        </div>
+      </div>
+
+      <!-- Impuestos F29 -->
+      <div class="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-2xl p-6 shadow-lg shadow-indigo-200 text-white transform hover:-translate-y-1 transition-transform flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-violet-100 font-medium">Total Impuestos (F29)</div>
+          <div class="p-2 bg-white/20 rounded-lg flex items-center justify-center">
+            <mat-icon>receipt_long</mat-icon>
+          </div>
+        </div>
+        <div class="text-3xl font-extrabold mb-3">
+          {{ (f29Resource().data?.ivaAPagar || 0) + (f29Resource().data?.totalRetencionHonorarios || 0) | currency:'CLP':'symbol-narrow':'1.0-0' }}
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-[11px] bg-white/10 p-2 rounded-lg backdrop-blur-sm">
+          <div><span class="text-indigo-200 block mb-0.5">IVA a Pagar:</span> <span class="font-bold">{{ f29Resource().data?.ivaAPagar | currency:'CLP':'symbol-narrow':'1.0-0' }}</span></div>
+          <div><span class="text-indigo-200 block mb-0.5">Retenciones:</span> <span class="font-bold">{{ f29Resource().data?.totalRetencionHonorarios | currency:'CLP':'symbol-narrow':'1.0-0' }}</span></div>
+        </div>
+      </div>
+
+      <!-- Efectivo (Liquidez) -->
+      <div class="bg-white/70 backdrop-blur-md rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-slate-500 font-medium">Disponible (Liquidez)</div>
+          <div class="p-2 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+            <mat-icon>account_balance_wallet</mat-icon>
+          </div>
+        </div>
+        <div class="text-2xl font-bold text-slate-800">
+          {{ liquidez() | currency:'CLP':'symbol-narrow':'1.0-0' }}
+        </div>
+        <div class="text-xs text-slate-400 mt-2">Saldo neto en Cajas y Bancos</div>
+      </div>
+
+      <!-- Cuentas Corrientes -->
+      <div class="bg-white/70 backdrop-blur-md rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-slate-500 font-medium">Deuda de Terceros</div>
+          <div class="p-2 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
+            <mat-icon>sync_alt</mat-icon>
+          </div>
+        </div>
+        <div class="flex justify-between items-end border-b border-slate-100 pb-2 mb-2">
+          <div class="text-xs font-semibold text-slate-400 uppercase">Por Cobrar</div>
+          <div class="text-lg font-bold text-emerald-600">{{ cuentasPorCobrar() | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+        </div>
+        <div class="flex justify-between items-end">
+          <div class="text-xs font-semibold text-slate-400 uppercase">Por Pagar</div>
+          <div class="text-lg font-bold text-rose-600">{{ cuentasPorPagar() | currency:'CLP':'symbol-narrow':'1.0-0' }}</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sección de Gráfico y Detalles -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+      
+      <!-- Gráfico de Evolución -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 lg:col-span-2">
+        <h3 class="text-lg font-bold text-slate-800 mb-4">Evolución de Ingresos y Egresos (Últimos 6 meses)</h3>
+        
+        <div class="h-80 w-full relative">
+          <canvas *ngIf="!evolucionResource().loading && chartData().datasets.length > 0"
+                  baseChart
+                  [data]="chartData()"
+                  [options]="barChartOptions"
+                  [type]="barChartType">
+          </canvas>
+          
+          <div *ngIf="evolucionResource().loading" class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10">
+            <mat-spinner diameter="40"></mat-spinner>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalles Balance y Utilidad -->
+      <div class="space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <h3 class="text-lg font-bold text-slate-800 mb-4">Posición Financiera</h3>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span class="text-slate-600">Total Activos</span>
+              <span class="font-semibold text-slate-800">{{ balanceResource().data?.totales?.activos | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span class="text-slate-600">Total Pasivos</span>
+              <span class="font-semibold text-slate-800">{{ balanceResource().data?.totales?.pasivos | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+              <span class="text-slate-600">Resultado Financiero</span>
+              <span class="font-semibold text-slate-800">{{ (balanceResource().data?.totales?.activos || 0) - (balanceResource().data?.totales?.pasivos || 0) | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 rounded-xl border" [ngClass]="(balanceResource().data?.totales?.utilidadDelEjercicio || 0) >= 0 ? 'bg-indigo-50 border-indigo-100' : 'bg-rose-50 border-rose-100'">
+              <span class="font-bold" [ngClass]="(balanceResource().data?.totales?.utilidadDelEjercicio || 0) >= 0 ? 'text-indigo-700' : 'text-rose-700'">
+                {{ (balanceResource().data?.totales?.utilidadDelEjercicio || 0) >= 0 ? 'Utilidad Ejercicio' : 'Pérdida Ejercicio' }}
+              </span>
+              <span class="font-bold" [ngClass]="(balanceResource().data?.totales?.utilidadDelEjercicio || 0) >= 0 ? 'text-indigo-700' : 'text-rose-700'">
+                {{ balanceResource().data?.totales?.utilidadDelEjercicio | currency:'CLP':'symbol-narrow':'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </ng-container>
+
+</div>
