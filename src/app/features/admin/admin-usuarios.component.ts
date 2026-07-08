@@ -44,7 +44,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
         
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-full md:w-72 bg-white rounded-lg">
           <mat-icon matPrefix class="text-slate-400 mr-2">search</mat-icon>
-          <input matInput placeholder="Buscar por nombre o email..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
+          <input matInput type="search"
+                 placeholder="Buscar por nombre o email..."
+                 autocomplete="off"
+                 spellcheck="false"
+                 data-lpignore="true"
+                 data-1p-ignore="true"
+                 data-form-type="other"
+                 [ngModel]="searchQuery()"
+                 (ngModelChange)="searchQuery.set($event)">
           <button *ngIf="searchQuery()" matSuffix mat-icon-button aria-label="Limpiar" (click)="searchQuery.set('')">
             <mat-icon>close</mat-icon>
           </button>
