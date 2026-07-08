@@ -45,4 +45,13 @@ export class AdminService {
       {},
     );
   }
+
+  reenviarInvitacion(
+    id: string,
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/usuarios/${id}/reenviar-invitacion`,
+      {},
+    );
+  }
 }

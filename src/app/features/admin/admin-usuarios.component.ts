@@ -89,7 +89,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
             <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-600 bg-slate-50/50"> Suscripción </th>
             <td mat-cell *matCellDef="let element">
               <div class="flex items-center gap-2">
-                <mat-slide-toggle 
+                <mat-slide-toggle
                   [checked]="element.activo"
                   [disabled]="element.rol === 'ADMIN' || isToggling()"
                   (change)="toggleStatus(element.id, $event.checked)">
@@ -98,6 +98,21 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
                   {{ element.activo ? 'Activa' : 'Inactiva' }}
                 </span>
               </div>
+            </td>
+          </ng-container>
+
+          <!-- Acciones Column -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-600 bg-slate-50/50 text-right pr-6"> Acciones </th>
+            <td mat-cell *matCellDef="let element" class="text-right pr-6">
+              <button
+                mat-icon-button
+                [disabled]="resendingId() === element.id"
+                (click)="reenviarInvitacion(element)"
+                matTooltip="Reenviar invitación por correo"
+                class="!text-violet-600">
+                <mat-icon>{{ resendingId() === element.id ? 'hourglass_empty' : 'mail' }}</mat-icon>
+              </button>
             </td>
           </ng-container>
 
@@ -135,8 +150,9 @@ export class AdminUsuariosComponent implements OnInit {
     );
   });
 
-  public displayedColumns: string[] = ['nombre', 'email', 'rol', 'activo'];
+  public displayedColumns: string[] = ['nombre', 'email', 'rol', 'activo', 'acciones'];
   public isToggling = signal<boolean>(false);
+  public resendingId = signal<string | null>(null);
 
   ngOnInit() {
     this.loadUsuarios();
@@ -178,6 +194,28 @@ export class AdminUsuariosComponent implements OnInit {
         this.isToggling.set(false);
         this.loadUsuarios(); // Reload to reset toggle
       }
+    });
+  }
+
+  reenviarInvitacion(usuario: Usuario) {
+    this.resendingId.set(usuario.id);
+    this.adminService.reenviarInvitacion(usuario.id).subscribe({
+      next: (res) => {
+        this.snackBar.open(
+          res.message || `Invitación reenviada a ${usuario.email}`,
+          'Cerrar',
+          { duration: 4000 },
+        );
+        this.resendingId.set(null);
+      },
+      error: (err) => {
+        this.snackBar.open(
+          err.error?.message || 'Error al reenviar la invitación',
+          'Cerrar',
+          { duration: 4000 },
+        );
+        this.resendingId.set(null);
+      },
     });
   }
 }

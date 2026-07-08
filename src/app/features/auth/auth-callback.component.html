@@ -1,0 +1,33 @@
+<div class="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-violet-400/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+
+  <div class="bg-white/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-white max-w-md w-full animate-fade-in text-center">
+
+    <div class="w-16 h-16 mx-auto bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-2xl shadow-lg flex items-center justify-center mb-6 transform rotate-3 hover:rotate-6 transition-transform">
+      <mat-icon class="text-white text-3xl h-8 w-8 leading-8">
+        @if (status() === 'processing') { hourglass_empty }
+        @if (status() === 'success') { check_circle }
+        @if (status() === 'error') { error_outline }
+      </mat-icon>
+    </div>
+
+    @if (status() === 'processing') {
+      <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Validando enlace</h1>
+      <p class="text-slate-500 mt-2 mb-6 font-medium">Espera un momento mientras verificamos tu invitación…</p>
+      <mat-spinner diameter="32" class="mx-auto"></mat-spinner>
+    }
+
+    @if (status() === 'success') {
+      <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">¡Enlace validado!</h1>
+      <p class="text-slate-500 mt-2 font-medium">Te llevamos a configurar tu contraseña…</p>
+    }
+
+    @if (status() === 'error') {
+      <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Enlace no válido</h1>
+      <p class="text-red-600 mt-2 mb-6 font-medium">{{ errorMessage() }}</p>
+      <a href="/login" class="text-violet-600 font-bold hover:underline">Volver al inicio de sesión</a>
+    }
+
+  </div>
+</div>
